@@ -1,5 +1,9 @@
 package dev.nebalus.mc.neoforge.mcreloaded;
 
+import com.mojang.serialization.Codec;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.neoforged.neoforge.registries.*;
 import org.slf4j.Logger;
@@ -42,7 +46,8 @@ public class MCRMod {
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "examplemod" namespace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, MODID);
+    public static final ResourceKey<Codec<? extends ChunkGenerator>> COOLDIM_NOISE_CODEC =
+            ResourceKey.create(Registries.CHUNK_GENERATOR, ResourceLocation.tryBuild(MODID, "noise"));
 
 
     // Creates a new Block with the id "examplemod:example_block", combining the namespace and path

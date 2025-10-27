@@ -49,7 +49,7 @@ public class PerlinChunkGenerator extends ChunkGenerator {
 
     @Override
     protected MapCodec<? extends ChunkGenerator> codec() {
-        return CODEC;
+        return (MapCodec<? extends ChunkGenerator>) CODEC;
     }
 
     @Override
