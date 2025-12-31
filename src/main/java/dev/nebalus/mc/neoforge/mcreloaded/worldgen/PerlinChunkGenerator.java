@@ -4,37 +4,28 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.server.level.WorldGenRegion;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.StructureManager;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-
-import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
-import net.minecraft.world.level.levelgen.synth.PerlinNoise;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class PerlinChunkGenerator extends ChunkGenerator {
-    public static final Codec<PerlinChunkGenerator> CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    BiomeSource.CODEC.fieldOf("biome_source").forGetter(g -> g.biomeSource),
-                    Codec.LONG.fieldOf("seed").forGetter(g -> g.seed)
-            ).apply(instance, PerlinChunkGenerator::new)
-    );
+    public static final MapCodec<PerlinChunkGenerator> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            BiomeSource.CODEC.fieldOf("biome_source").forGetter(g -> g.biomeSource),
+            Codec.LONG.fieldOf("seed").forGetter(g -> g.seed)).apply(instance, PerlinChunkGenerator::new));
 
     private final long seed;
     private final PerlinTest perlin;
@@ -49,16 +40,18 @@ public class PerlinChunkGenerator extends ChunkGenerator {
 
     @Override
     protected MapCodec<? extends ChunkGenerator> codec() {
-        return (MapCodec<? extends ChunkGenerator>) CODEC;
+        return CODEC;
     }
 
     @Override
-    public void applyCarvers(WorldGenRegion worldGenRegion, long l, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess) {
+    public void applyCarvers(WorldGenRegion worldGenRegion, long l, RandomState randomState, BiomeManager biomeManager,
+            StructureManager structureManager, ChunkAccess chunkAccess) {
 
     }
 
     @Override
-    public void buildSurface(WorldGenRegion worldGenRegion, StructureManager structureManager, RandomState randomState, ChunkAccess chunk) {
+    public void buildSurface(WorldGenRegion worldGenRegion, StructureManager structureManager, RandomState randomState,
+            ChunkAccess chunk) {
         ChunkPos cpos = chunk.getPos();
         int baseX = cpos.getMinBlockX();
         int baseZ = cpos.getMinBlockZ();
@@ -71,7 +64,7 @@ public class PerlinChunkGenerator extends ChunkGenerator {
                 double freq = 0.01;
                 double amp = 30.0;
                 double value = this.perlin.noise(worldX * freq, 0.0, worldZ * freq);
-                int height = 64 + (int)Math.round(value * amp);
+                int height = 64 + (int) Math.round(value * amp);
                 height = Math.max(-64, Math.min(319, height));
 
                 for (int y = -64; y <= height; y++) {
@@ -95,12 +88,15 @@ public class PerlinChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getGenDepth() {
-        return 100;
+        return 384; // Total world height (-64 to 320)
     }
 
     @Override
-    public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunkAccess) {
-        return null;
+    public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState,
+            StructureManager structureManager, ChunkAccess chunkAccess) {
+        // We handle all terrain generation in buildSurface, so just return completed
+        // future
+        return CompletableFuture.completedFuture(chunkAccess);
     }
 
     @Override
@@ -110,17 +106,42 @@ public class PerlinChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getMinY() {
-        return 0;
+        return -64; // Minecraft 1.21.8 world minimum height
     }
 
     @Override
-    public int getBaseHeight(int i, int i1, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
-        return 0;
+    public int getBaseHeight(int x, int z, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor,
+            RandomState randomState) {
+        double freq = 0.01;
+        double amp = 30.0;
+        double value = this.perlin.noise(x * freq, 0.0, z * freq);
+        int height = 64 + (int) Math.round(value * amp);
+        return Math.max(-64, Math.min(320, height));
     }
 
     @Override
-    public NoiseColumn getBaseColumn(int i, int i1, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
-        return null;
+    public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
+        int height = getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, levelHeightAccessor, randomState);
+        int minY = levelHeightAccessor.getMinY();
+        int maxY = levelHeightAccessor.getMaxY();
+
+        net.minecraft.world.level.block.state.BlockState[] states = new net.minecraft.world.level.block.state.BlockState[maxY
+                - minY];
+
+        for (int y = minY; y < maxY; y++) {
+            int index = y - minY;
+            if (y > height) {
+                states[index] = Blocks.AIR.defaultBlockState();
+            } else if (y == height) {
+                states[index] = Blocks.GRASS_BLOCK.defaultBlockState();
+            } else if (y > height - 6) {
+                states[index] = Blocks.DIRT.defaultBlockState();
+            } else {
+                states[index] = Blocks.STONE.defaultBlockState();
+            }
+        }
+
+        return new NoiseColumn(minY, states);
     }
 
     @Override

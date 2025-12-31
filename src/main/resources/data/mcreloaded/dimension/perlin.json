@@ -1,0 +1,11 @@
+{
+    "type": "mcreloaded:perlin",
+    "generator": {
+        "type": "mcreloaded:perlin",
+        "biome_source": {
+            "type": "minecraft:fixed",
+            "biome": "minecraft:plains"
+        },
+        "seed": 0
+    }
+}

@@ -50,8 +50,12 @@ public class MCRMod {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister
             .create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    public static final ResourceKey<Codec<? extends ChunkGenerator>> COOLDIM_NOISE_CODEC = ResourceKey
-            .create(Registries.CHUNK_GENERATOR, ResourceLocation.tryBuild(MODID, "noise"));
+    // Create a Deferred Register for ChunkGenerators
+    public static final DeferredRegister<com.mojang.serialization.MapCodec<? extends ChunkGenerator>> CHUNK_GENERATORS = DeferredRegister
+            .create(Registries.CHUNK_GENERATOR, MODID);
+
+    public static final ResourceKey<com.mojang.serialization.MapCodec<? extends ChunkGenerator>> PERLIN_NOISE_CODEC_KEY = ResourceKey
+            .create(Registries.CHUNK_GENERATOR, ResourceLocation.tryBuild(MODID, "perlin"));
 
     // Creates a new Block with the id "mcreloaded:example_block", combining the
     // namespace and path
@@ -61,6 +65,10 @@ public class MCRMod {
     // namespace and path
     public static final DeferredItem<BlockItem> EXAMPLE_BLOCK_ITEM = ITEMS.registerSimpleBlockItem("example_block",
             EXAMPLE_BLOCK);
+
+    // Register the Perlin chunk generator codec
+    public static final DeferredHolder<com.mojang.serialization.MapCodec<? extends ChunkGenerator>, com.mojang.serialization.MapCodec<dev.nebalus.mc.neoforge.mcreloaded.worldgen.PerlinChunkGenerator>> PERLIN_CHUNK_GENERATOR = CHUNK_GENERATORS
+            .register("perlin", () -> dev.nebalus.mc.neoforge.mcreloaded.worldgen.PerlinChunkGenerator.CODEC);
 
     // Creates a new food item with the id "mcreloaded:example_item", nutrition 1
     // and saturation 2
@@ -95,6 +103,9 @@ public class MCRMod {
         ITEMS.register(modEventBus);
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
+        // Register the Deferred Register to the mod event bus so chunk generators get
+        // registered
+        CHUNK_GENERATORS.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod)
