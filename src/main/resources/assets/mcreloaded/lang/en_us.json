@@ -1,0 +1,12 @@
+{
+  "itemGroup.mcreloaded": "MCReloaded Tab",
+  "block.mcreloaded.example_block": "Example Block",
+  "item.mcreloaded.example_item": "Example Item",
+  "mcreloaded.configuration.title": "MCReloaded Configs",
+  "mcreloaded.configuration.section.mcreloaded.common.toml": "MCReloaded Configs",
+  "mcreloaded.configuration.section.mcreloaded.common.toml.title": "MCReloaded Configs",
+  "mcreloaded.configuration.items": "Item List",
+  "mcreloaded.configuration.logDirtBlock": "Log Dirt Block",
+  "mcreloaded.configuration.magicNumberIntroduction": "Magic Number Text",
+  "mcreloaded.configuration.magicNumber": "Magic Number"
+}
